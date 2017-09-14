@@ -7,6 +7,7 @@ from collections import namedtuple
 from datetime import datetime
 from itertools import zip_longest
 
+import cfscrape
 import requests
 import shortuuid
 from bs4 import BeautifulSoup
@@ -144,7 +145,7 @@ class Scraper(object):
         # sample - 31st July 2017 ( 10:50AM  ) +0630
         # parse the original string
         source_time = datetime.strptime(source_time_str,
-                                        '%d %B %Y ( %I:%M%p ) %z')
+                                        '%d %B %Y ( %I:%M %p  ) %z')
         # reformat it
         source_time = int(datetime.strftime(source_time, '%s'))
         tmp = []
@@ -166,7 +167,11 @@ class Scraper(object):
         """ scrapper for MAB bank"""
         scrap_time = self._get_scrap_time()
 
-        result = requests.get(self.mab_url)
+        result = None
+
+        scraper = cfscrape.create_scraper()
+        result = scraper.get(self.mab_url)
+
         soup = BeautifulSoup(result.content, "lxml")
         raw_data = soup.find('div', {'class', 'exchange-box'})
 
