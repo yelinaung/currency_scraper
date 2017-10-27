@@ -145,7 +145,7 @@ class Scraper(object):
         # sample - 31st July 2017 ( 10:50AM  ) +0630
         # parse the original string
         source_time = datetime.strptime(source_time_str,
-                                        '%d %B %Y ( %I:%M %p  ) %z')
+                                        '%d %B %Y ( %I:%M%p  ) %z')
         # reformat it
         source_time = int(datetime.strftime(source_time, '%s'))
         tmp = []
