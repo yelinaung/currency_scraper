@@ -45,6 +45,12 @@ def run_scraper():
 
     data.append(agd)
 
+    central_bank = my_scraper.scrap_central_bank()._asdict()
+    for index, item in enumerate(central_bank.get('rates')):
+        central_bank['rates'][index] = item._asdict()
+
+    data.append(central_bank)
+
     print(data)
 
 

@@ -8,6 +8,7 @@ A Python script to collect information from the following banks in Myanmar.
 - [MAB](https://www.mabbank.com/)
 - [UAB](http://www.unitedamarabank.com)
 - [AGD](http://www.agdbank.com.mm)
+- [Central Bank](http://forex.cbm.gov.mm/index.php/api)
 
 ### Example
 
