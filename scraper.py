@@ -25,12 +25,13 @@ class Scraper(object):
         return cls._instance
 
     def __init__(self):
-        self.kbz_url = "https://www.kbzbank.com/en"
-        self.cbb_url = "http://www.cbbank.com.mm/exchange_rate.aspx"
-        self.aya_url = "http://www.ayabank.com/en_US/"
-        self.mab_url = "https://www.mabbank.com/"
-        self.uab_url = "http://www.unitedamarabank.com"
-        self.agd_url = "http://otcservice.agdbank.com.mm/utility/rateinfo?callback=?"
+        self.kbz_url = 'https://www.kbzbank.com/en'
+        self.cbb_url = 'http://www.cbbank.com.mm/exchange_rate.aspx'
+        self.aya_url = 'http://www.ayabank.com/en_US/'
+        self.mab_url = 'https://www.mabbank.com/'
+        self.uab_url = 'http://www.unitedamarabank.com'
+        self.agd_url = 'http://otcservice.agdbank.com.mm/utility/rateinfo?callback=?'
+        self.central_bank_url = 'http://forex.cbm.gov.mm/api/latest'
         self.BuySell = namedtuple('BuySell', 'currency_code buy sell')
         self.Currency = namedtuple('Currency',
                                    'id bank_code scrap_time source_time rates')
@@ -49,6 +50,7 @@ class Scraper(object):
         # urllib.request.urlretrieve(self.kbz_url, kbz_temp_file)
 
         # soup = BeautifulSoup(open(kbz_temp_file).read(), "lxml")
+        # urllib.request.urlretrieve(self.kbz_url, )
         soup = BeautifulSoup(result.content, "lxml")
         raw_data = soup.find('div', {'class': 'exchange-rate'}).find_all(
             'div', {'class': 'col-lg-2'})
@@ -144,8 +146,14 @@ class Scraper(object):
 
         # sample - 31st July 2017 ( 10:50AM  ) +0630
         # parse the original string
-        source_time = datetime.strptime(source_time_str,
-                                        '%d %B %Y ( %I:%M%p  ) %z')
+        source_time = None
+        try:
+            source_time = datetime.strptime(source_time_str,
+                                            '%d %B %Y ( %I:%M%p  ) %z')
+        except:
+            source_time = datetime.strptime(source_time_str,
+                                            '%d %B %Y (  %I:%M %p  ) %z')
+
         # reformat it
         source_time = int(datetime.strftime(source_time, '%s'))
         tmp = []
@@ -278,6 +286,40 @@ class Scraper(object):
         return self.Currency(
             id=shortuuid.uuid(),
             bank_code='agd',
+            source_time=source_time,
+            scrap_time=scrap_time,
+            rates=buy_sell)
+
+    def scrap_central_bank(self):
+        """ scrapper for AGD bank """
+        scrap_time = self._get_scrap_time()
+        result = requests.get(self.central_bank_url, stream=True)
+        data = result.json()
+        # used for debugging/development
+        # data = json.load(open("central_bank.json", "r"))
+
+        # use scrap_time as a backup
+        source_time = data.get('timestamp', scrap_time)
+
+        rates_keys = list(data['rates'].keys())
+        rates_values = list(data['rates'].values())
+        rates_data = []
+
+        # duplicate each member of the rates values
+        # to make it 'buy' and 'sell'
+        for rate_value in rates_values:
+            rates_data.extend([rate_value, rate_value])
+
+        # insert at every 3rd position except the first one
+        for index, rates_key in enumerate(rates_keys):
+            i = 0 if index == 0 else index * 3
+            rates_data.insert(i, rates_key)
+
+        buy_sell = self._group_buy_sell(rates_data)
+
+        return self.Currency(
+            id=shortuuid.uuid(),
+            bank_code='central_bank',
             source_time=source_time,
             scrap_time=scrap_time,
             rates=buy_sell)
