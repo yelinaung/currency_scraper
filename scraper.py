@@ -112,9 +112,7 @@ class Scraper(object):
         # omit the first item and slice until the last time
         currencies_row = raw_data[1:-1]
         for currency in currencies_row:
-            for value in currency.find_all("td"):
-                tmp.append(value.string)
-
+            tmp.extend(value.string for value in currency.find_all("td"))
         buy_sell = self._group_buy_sell(tmp)
 
         return self.Currency(
@@ -138,7 +136,7 @@ class Scraper(object):
         for date_content in date_row.contents:
             if date_content.string is not None:
                 tmp_date.append(date_content.string.replace("\n", ""))
-                source_time_str = str(' '.join(tmp_date))
+                source_time_str = ' '.join(tmp_date)
 
         # remove ordinal str from the date
         source_time_str = self.ordn.sub('', source_time_str)
@@ -159,9 +157,7 @@ class Scraper(object):
         tmp = []
         currencies_row = raw_data[1:-1]
         for currency in currencies_row:
-            for value in currency.find_all("td"):
-                tmp.append(value.string)
-
+            tmp.extend(value.string for value in currency.find_all("td"))
         buy_sell = self._group_buy_sell(tmp)
 
         return self.Currency(
@@ -206,9 +202,7 @@ class Scraper(object):
 
         for currency in currencies:
             rates = list(currency)
-            for rate in rates:
-                tmp.append(rate.text)
-
+            tmp.extend(rate.text for rate in rates)
         buy_sell = self._group_buy_sell(tmp)
 
         return self.Currency(
@@ -238,9 +232,7 @@ class Scraper(object):
             for value in currency.select("ul li"):
                 # .stripped_strings yields Python strings
                 # that have had whitespace stripped
-                for stripped_string in value.stripped_strings:
-                    tmp.append(stripped_string)
-
+                tmp.extend(iter(value.stripped_strings))
         buy_sell = self._group_buy_sell(tmp)
 
         return self.Currency(
@@ -259,7 +251,6 @@ class Scraper(object):
         source_time = scrap_time
 
         result = requests.get(self.agd_url)
-        tmp = []
         raw_data = result.content.decode("utf-8")
         raw_data = raw_data.replace('?', '')
         raw_data = raw_data.replace('(', '')
@@ -268,19 +259,20 @@ class Scraper(object):
 
         raw_json_string = json.loads(raw_data)
 
-        tmp.append("USD")
-        tmp.append(self._extract_with_index(raw_json_string, 7))
-        tmp.append(self._extract_with_index(raw_json_string, 6))
-        tmp.append("EUR")
-        tmp.append(self._extract_with_index(raw_json_string, 1))
-        tmp.append(self._extract_with_index(raw_json_string, 0))
-        tmp.append("SGD")
-        tmp.append(self._extract_with_index(raw_json_string, 3))
-        tmp.append(self._extract_with_index(raw_json_string, 2))
-        tmp.append("THB")
-        tmp.append(self._extract_with_index(raw_json_string, 5))
-        tmp.append(self._extract_with_index(raw_json_string, 4))
-
+        tmp = [
+            "USD",
+            self._extract_with_index(raw_json_string, 7),
+            self._extract_with_index(raw_json_string, 6),
+            "EUR",
+            self._extract_with_index(raw_json_string, 1),
+            self._extract_with_index(raw_json_string, 0),
+            "SGD",
+            self._extract_with_index(raw_json_string, 3),
+            self._extract_with_index(raw_json_string, 2),
+            "THB",
+            self._extract_with_index(raw_json_string, 5),
+            self._extract_with_index(raw_json_string, 4),
+        ]
         buy_sell = self._group_buy_sell(tmp)
 
         return self.Currency(
@@ -326,11 +318,7 @@ class Scraper(object):
 
     def _group_buy_sell(self, tmp):
         groups = list(self.grouper(tmp, 3))
-        buy_sell = []
-        for g in groups:
-            buy_sell.append(
-                self.BuySell(currency_code=g[0], buy=g[1], sell=g[2]))
-        return buy_sell
+        return [self.BuySell(currency_code=g[0], buy=g[1], sell=g[2]) for g in groups]
 
     def _extract_with_index(self, data, index):
         return str(data['ExchangeRates'][index]['Rate'])
