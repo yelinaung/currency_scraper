@@ -5,16 +5,13 @@ import scraper
 
 
 def run_scraper():
-    data = []
-
     my_scraper = scraper.Scraper()
 
     kbz = my_scraper.scrap_kbz()._asdict()
     for index, item in enumerate(kbz.get('rates')):
         kbz['rates'][index] = item._asdict()
 
-    data.append(kbz)
-
+    data = [kbz]
     cbb = my_scraper.scrap_cbb()._asdict()
     for index, item in enumerate(cbb.get('rates')):
         cbb['rates'][index] = item._asdict()
